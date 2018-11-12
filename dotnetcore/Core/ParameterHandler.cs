@@ -53,6 +53,10 @@ namespace FileContentQuery.Core
             }
             return parameters;
         }
+        public T ToModel<T>(String args) where T : class
+        {
+            return this.ToModel<T>(args.Split(" "));
+        }
         public T ToModel<T>(String[] args) where T : class
         {
             var parameters = this.ToDictionary(args);

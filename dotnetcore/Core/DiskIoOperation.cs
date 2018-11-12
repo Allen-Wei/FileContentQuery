@@ -8,6 +8,7 @@ namespace FileContentQuery.Core
 
     public class DiskIoOperation
     {
+        private int ADD_LENGTH = 10;
         private QueryParameters _parameters;
         public DiskIoOperation(QueryParameters parameters)
         {
@@ -35,6 +36,7 @@ namespace FileContentQuery.Core
             directory.GetDirectories().ToList().ForEach(this.Print);
             directory.GetFiles().ToList().ForEach(this.Print);
         }
+
         private void Print(FileInfo file)
         {
             if (!String.IsNullOrWhiteSpace(this._parameters.Include) && !Regex.IsMatch(file.FullName, this._parameters.Include)) return;
@@ -43,14 +45,22 @@ namespace FileContentQuery.Core
             if (file.Length > 10 * 1024 * 1024) return;
 
             String[] lines = File.ReadAllLines(file.FullName);
-            int index = 1;
+            int lineIndex = 1;
             foreach (String line in lines)
             {
-                if (line.Contains(this._parameters.Match) || Regex.IsMatch(line, this._parameters.Match))
+                String prefix = $"[{file.FullName}#{lineIndex}]";
+                MatchCollection matches = Regex.Matches(line, this._parameters.Match);
+                foreach (Match match in matches)
                 {
-                    Console.WriteLine($"[{file.FullName}#{index}] {line}");
+                    if (match.Groups.Count <= 0) continue;
+                    Group firstGroup = match.Groups[0];
+
+                    String matchPrefix = line.SafeSubstring(firstGroup.Index - ADD_LENGTH, ADD_LENGTH);
+                    String matchSuffix = line.SafeSubstring(firstGroup.Index + firstGroup.Value.Length, ADD_LENGTH);
+
+                    Console.WriteLine($"{prefix}:{firstGroup.Index} {matchPrefix}{firstGroup.Value}{matchSuffix}");
                 }
-                index++;
+                lineIndex++;
             }
         }
     }
